@@ -1,41 +1,55 @@
 import os
 import re
 
-IMAGE_FOLDER = "." 
-OUTPUT_FILE = "planche_messier.html"
-
-# Base de données simplifiée des types d'objets Messier
-MESSIER_TYPES = {
-    1: "Nébuleuse", 2: "Amas Globulaire", 3: "Amas Globulaire", 4: "Amas Globulaire", 5: "Amas Globulaire",
-    6: "Amas Ouvert", 7: "Amas Ouvert", 8: "Nébuleuse", 9: "Amas Globulaire", 10: "Amas Globulaire",
-    11: "Amas Ouvert", 12: "Amas Globulaire", 13: "Amas Globulaire", 14: "Amas Globulaire", 15: "Amas Globulaire",
-    16: "Nébuleuse", 17: "Nébuleuse", 18: "Amas Ouvert", 19: "Amas Globulaire", 20: "Nébuleuse",
-    21: "Amas Ouvert", 22: "Amas Globulaire", 23: "Amas Ouvert", 24: "Nuage Stellaire", 25: "Amas Ouvert",
-    26: "Amas Ouvert", 27: "Nébuleuse Planétaire", 28: "Amas Globulaire", 29: "Amas Ouvert", 30: "Amas Globulaire",
-    31: "Galaxie", 32: "Galaxie", 33: "Galaxie", 34: "Amas Ouvert", 35: "Amas Ouvert",
-    36: "Amas Ouvert", 37: "Amas Ouvert", 38: "Amas Ouvert", 39: "Amas Ouvert", 40: "Étoile Double",
-    41: "Amas Ouvert", 42: "Nébuleuse", 43: "Nébuleuse", 44: "Amas Ouvert", 45: "Amas Ouvert",
-    46: "Amas Ouvert", 47: "Amas Ouvert", 48: "Amas Ouvert", 49: "Galaxie", 50: "Amas Ouvert",
-    51: "Galaxie", 52: "Amas Ouvert", 53: "Amas Globulaire", 54: "Amas Globulaire", 55: "Amas Globulaire",
-    56: "Amas Globulaire", 57: "Nébuleuse Planétaire", 58: "Galaxie", 59: "Galaxie", 60: "Galaxie",
-    61: "Galaxie", 62: "Amas Globulaire", 63: "Galaxie", 64: "Galaxie", 65: "Galaxie",
-    66: "Galaxie", 67: "Amas Ouvert", 68: "Amas Globulaire", 69: "Amas Globulaire", 70: "Amas Globulaire",
-    71: "Amas Globulaire", 72: "Amas Globulaire", 73: "Astérisme", 74: "Galaxie", 75: "Amas Globulaire",
-    76: "Nébuleuse Planétaire", 77: "Galaxie", 78: "Nébuleuse", 79: "Amas Globulaire", 80: "Amas Globulaire",
-    81: "Galaxie", 82: "Galaxie", 83: "Galaxie", 84: "Galaxie", 85: "Galaxie",
-    86: "Galaxie", 87: "Galaxie", 88: "Galaxie", 89: "Galaxie", 90: "Galaxie",
-    91: "Galaxie", 92: "Amas Globulaire", 93: "Amas Ouvert", 94: "Galaxie", 95: "Galaxie",
-    96: "Galaxie", 97: "Nébuleuse Planétaire", 98: "Galaxie", 99: "Galaxie", 100: "Galaxie",
-    101: "Galaxie", 102: "Galaxie", 103: "Amas Ouvert", 104: "Galaxie", 105: "Galaxie",
-    106: "Galaxie", 107: "Amas Globulaire", 108: "Galaxie", 109: "Galaxie", 110: "Galaxie"
+# ==========================================================
+# CONFIGURATION & TRADUCTION (Mod here)
+# ==========================================================
+CONFIG = {
+    "FILE_OUT": "planche_messier.html",                      # "Messier catalog"
+    "EXTENSIONS": (".jpg", ".jpeg", ".png", ".webp")
 }
 
-photo_dict = {}
-valid_extensions = (".jpg", ".jpeg", ".png", ".webp")
+LANG = {
+    "PAGE_TITLE": "Ma Planche Messier",                      # "my Messier catalog"
+    "HEADER_TITLE": "mon catalogue Messier",                 # "my Messier catalog"
+    "UNIT_LABEL": "objets",                                  # "objects"
+    "UNKNOWN_TYPE": "Inconnu",                               # "unknown"
+    "TYPES": {
+        "N": "Nébuleuse",                                    # "nebula"
+        "NP": "Nébuleuse Planétaire",                        # "planetary nebula"
+        "AG": "Amas Globulaire",                             # "globular cluster"
+        "AO": "Amas Ouvert",                                 # "open cluster"
+        "G": "Galaxie",                                      # "galaxy"
+        "NS": "Nuage Stellaire",                             # "stellar cloud"
+        "D": "Étoile Double",                                # "double star"
+        "A": "Astérisme"                                     # "asterism"
+    }
+}
 
-files = os.listdir(IMAGE_FOLDER)
+# Messier database (uses above traduction keys)
+T = LANG["TYPES"]
+MESSIER_DATA = {
+    1: T["N"], 2: T["AG"], 3: T["AG"], 4: T["AG"], 5: T["AG"], 6: T["AO"], 7: T["AO"], 8: T["N"], 9: T["AG"], 10: T["AG"],
+    11: T["AO"], 12: T["AG"], 13: T["AG"], 14: T["AG"], 15: T["AG"], 16: T["N"], 17: T["N"], 18: T["AO"], 19: T["AG"], 20: T["N"],
+    21: T["AO"], 22: T["AG"], 23: T["AO"], 24: T["NS"], 25: T["AO"], 26: T["AO"], 27: T["NP"], 28: T["AG"], 29: T["AO"], 30: T["AG"],
+    31: T["G"], 32: T["G"], 33: T["G"], 34: T["AO"], 35: T["AO"], 36: T["AO"], 37: T["AO"], 38: T["AO"], 39: T["AO"], 40: T["D"],
+    41: T["AO"], 42: T["N"], 43: T["N"], 44: T["AO"], 45: T["AO"], 46: T["AO"], 47: T["AO"], 48: T["AO"], 49: T["G"], 50: T["AO"],
+    51: T["G"], 52: T["AO"], 53: T["AG"], 54: T["AG"], 55: T["AG"], 56: T["AG"], 57: T["NP"], 58: T["G"], 59: T["G"], 60: T["G"],
+    61: T["G"], 62: T["AG"], 63: T["G"], 64: T["G"], 65: T["G"], 66: T["G"], 67: T["AO"], 68: T["AG"], 69: T["AG"], 70: T["AG"],
+    71: T["AG"], 72: T["AG"], 73: T["A"], 74: T["G"], 75: T["AG"], 76: T["NP"], 77: T["G"], 78: T["N"], 79: T["AG"], 80: T["AG"],
+    81: T["G"], 82: T["G"], 83: T["G"], 84: T["G"], 85: T["G"], 86: T["G"], 87: T["G"], 88: T["G"], 89: T["G"], 90: T["G"],
+    91: T["G"], 92: T["AG"], 93: T["AO"], 94: T["G"], 95: T["G"], 96: T["G"], 97: T["NP"], 98: T["G"], 99: T["G"], 100: T["G"],
+    101: T["G"], 102: T["G"], 103: T["AO"], 104: T["G"], 105: T["G"], 106: T["G"], 107: T["AG"], 108: T["G"], 109: T["G"], 110: T["G"]
+}
+
+# ==========================================================
+#                      SCRIPT
+# ==========================================================
+
+photo_dict = {}
+files = os.listdir(".")
 for filename in files:
-    if filename.lower().endswith(valid_extensions):
+    if filename.lower().endswith(CONFIG["EXTENSIONS"]):
         matches = re.findall(r'M\s?(\d+)', filename, re.IGNORECASE)
         if matches:
             for m in matches:
@@ -50,7 +64,7 @@ html_content = f"""
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Ma Planche Messier</title>
+    <title>{LANG["PAGE_TITLE"]}</title>
     <style>
         body {{ font-family: 'Segoe UI', Arial, sans-serif; background: #0a0a0a; color: #eee; margin: 0; padding: 20px; overflow-y: scroll; }}
         header {{ text-align: center; margin-bottom: 30px; }}
@@ -63,7 +77,7 @@ html_content = f"""
         .case:hover img {{ opacity: 0.7; }}
         .label {{ padding: 6px; font-size: 13px; font-weight: bold; text-align: center; background: #252525; }}
         .empty {{ color: #222; font-size: 32px; font-weight: 900; line-height: 1; }}
-        .type-hint {{ color: #333; font-size: 10px; text-transform: uppercase; margin-top: 5px; font-weight: bold; }}
+        .type-hint {{ color: #333; font-size: 10px; text-transform: uppercase; margin-top: 5px; font-weight: bold; text-align: center; padding: 0 5px; }}
         .empty-label {{ color: #555; }}
         #overlay {{ display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); overflow: auto; touch-action: none; cursor: default; }}
         #imgWrapper {{ display: flex; justify-content: center; align-items: center; min-width: 100%; min-height: 100%; padding: 40px; box-sizing: border-box; }}
@@ -74,15 +88,15 @@ html_content = f"""
 </head>
 <body>
     <header>
-        <h1>mon catalogue Messier</h1>
-        <div class="stats">({nb_objets} / 110)</div>
+        <h1>{LANG["HEADER_TITLE"]}</h1>
+        <div class="stats">({nb_objets} / 110 {LANG["UNIT_LABEL"]})</div>
     </header>
     <div class="grid">
 """
 
 for i in range(1, 111):
     html_content += '<div class="case">'
-    obj_type = MESSIER_TYPES.get(i, "")
+    obj_type = MESSIER_DATA.get(i, LANG["UNKNOWN_TYPE"])
     if i in photo_dict:
         html_content += f'<div class="img-container" onclick="showImg(\'{photo_dict[i]}\')">'
         html_content += f'<img src="{photo_dict[i]}" alt="M{i}"></div>'
@@ -104,15 +118,13 @@ html_content += """
         </div>
     </div>
     <script>
-        let scale = 1;
-        let isDragging = false;
+        let scale = 1; let isDragging = false;
         let startX, startY, scrollLeft, scrollTop;
         const overlay = document.getElementById('overlay');
         const img = document.getElementById('fullImg');
 
         function showImg(src) {
-            img.src = src;
-            scale = 1;
+            img.src = src; scale = 1;
             img.style.transform = `scale(${scale})`;
             overlay.style.display = 'block';
             document.body.style.overflow = 'hidden';
@@ -149,5 +161,7 @@ html_content += """
 </html>
 """
 
-with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
+with open(CONFIG["FILE_OUT"], "w", encoding="utf-8") as f:
     f.write(html_content)
+
+print(f"Done: {nb_objets}/110 identified. Open {CONFIG['FILE_OUT']}")
