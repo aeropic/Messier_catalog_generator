@@ -11,18 +11,18 @@ Place the "Messier_generator.py" script and the "Messier.bat" file in the same f
 - thumbnails are created and stored into a "thumbnails" folder
 - The thumbnails are clickable to access the zoomable image.
 - reference of each Messier object (eg M42) is clickable and points to telescopius
+- The marathon score is displayed at the top (for me, it's like a leisurely stroll with 32 in 2 years!).
+  
 <img width="1464" height="848" alt="cata" src="https://github.com/user-attachments/assets/7fdbe97e-83df-4847-b77f-7b5ed5fd8eef" />
-
-The marathon score is displayed at the top (for me, it's like a leisurely stroll with 32 in 2 years!).
 
 If there are multiple objects in the same image, name the file with both objects (e.g., M65_M66_triplet_lion.jpg).
 The script includes a mini-catalog, and the object type is indicated below the object number. I was surprised to see that mischievous Messier slipped a double star into M40 and something odd into M24!
 
 The .bat file, of course, only runs on PC...
 
-Let me know if it works for you too and if you see any improvements you could make! And post your scores here!
+Let me know if it works for you too and if you see any improvements we could make! 
 
-Note: Open the .bat file and specify the path to your Python installation. I pointed to SIRIL's path:
+Note: Open and edit the .bat file to specify the path to your Python installation. I pointed to SIRIL's path:
 :: Launch Python on the script located in the same folder:
 "C:\Program Files\Siril\python\python.exe" "Messier_generator.py"
 
