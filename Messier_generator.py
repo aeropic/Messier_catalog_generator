@@ -1,12 +1,33 @@
 import os
 import re
+import sys
+import subprocess
+
+# ==========================================================
+# AUTO-INSTALLATION DES DÉPENDANCES
+# ==========================================================
+try:
+    from PIL import Image
+except ImportError:
+    print("Bibliotheque Pillow manquante. Installation en cours...")
+    try:
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
+        from PIL import Image
+        print("Installation reussie.\n")
+    except Exception as e:
+        print(f"Erreur lors de l'installation automatique : {e}")
+        print("Veuillez installer manuellement avec : pip install Pillow")
+        sys.exit(1)
+
 
 # ==========================================================
 # CONFIGURATION & TRADUCTION (Mod here)
 # ==========================================================
 CONFIG = {
     "FILE_OUT": "planche_messier.html",                      # "Messier catalog"
-    "EXTENSIONS": (".jpg", ".jpeg", ".png", ".webp")
+    "EXTENSIONS": (".jpg", ".jpeg", ".png", ".webp"),
+    "THUMB_DIR": "thumbnails",
+    "THUMB_SIZE": (300, 300)
 }
 
 LANG = {
@@ -46,16 +67,38 @@ MESSIER_DATA = {
 #                      SCRIPT
 # ==========================================================
 
+# ==========================================================
+# LOGIQUE DE GÉNÉRATION
+# ==========================================================
+
+if not os.path.exists(CONFIG["THUMB_DIR"]):
+    os.makedirs(CONFIG["THUMB_DIR"])
+
 photo_dict = {}
-files = os.listdir(".")
+files = [f for f in os.listdir(".") if f.lower().endswith(CONFIG["EXTENSIONS"])]
+
 for filename in files:
-    if filename.lower().endswith(CONFIG["EXTENSIONS"]):
-        matches = re.findall(r'M\s?(\d+)', filename, re.IGNORECASE)
-        if matches:
-            for m in matches:
-                num = int(m)
-                if 1 <= num <= 110:
-                    photo_dict[num] = filename
+    matches = re.findall(r'M\s?(\d+)', filename, re.IGNORECASE)
+    if matches:
+        base_name = os.path.splitext(filename)[0]
+        thumb_name = f"{base_name}_thumbnail.jpg"
+        thumb_path = os.path.join(CONFIG["THUMB_DIR"], thumb_name)
+
+        if not os.path.exists(thumb_path):
+            try:
+                with Image.open(filename) as img:
+                    img.thumbnail(CONFIG["THUMB_SIZE"])
+                    if img.mode in ("RGBA", "P"):
+                        img = img.convert("RGB")
+                    img.save(thumb_path, "JPEG", quality=85)
+            except Exception as e:
+                print(f"Erreur sur {filename}: {e}")
+                thumb_path = filename
+
+        for m in matches:
+            num = int(m)
+            if 1 <= num <= 110:
+                photo_dict[num] = {"full": filename, "thumb": thumb_path}
 
 nb_objets = len(photo_dict)
 
@@ -84,6 +127,13 @@ html_content = f"""
         #fullImg {{ transition: transform 0.1s ease-out; cursor: grab; box-shadow: 0 0 30px rgba(0,0,0,0.8); user-select: none; transform-origin: center; max-width: 90vw; }}
         #fullImg:active {{ cursor: grabbing; }}
         .close-btn {{ position: fixed; top: 15px; right: 25px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; opacity: 0.7; }}
+        @media print {{
+            body {{ background: white !important; color: black !important; }}
+            header h1 {{ color: black !important; }}
+            .case {{ border: 1px solid #ccc !important; background: white !important; }}
+            .label {{ background: #eee !important; color: black !important; }}
+            #overlay, .close-btn {{ display: none !important; }}
+        }}
     </style>
 </head>
 <body>
@@ -98,8 +148,9 @@ for i in range(1, 111):
     html_content += '<div class="case">'
     obj_type = MESSIER_DATA.get(i, LANG["UNKNOWN_TYPE"])
     if i in photo_dict:
-        html_content += f'<div class="img-container" onclick="showImg(\'{photo_dict[i]}\')">'
-        html_content += f'<img src="{photo_dict[i]}" alt="M{i}"></div>'
+        paths = photo_dict[i]
+        html_content += f'<div class="img-container" onclick="showImg(\'{paths["full"]}\')">'
+        html_content += f'<img src="{paths["thumb"]}" alt="M{i}"></div>'
         html_content += f'<div class="label">M{i}</div>'
     else:
         html_content += f'<div class="img-container">'
@@ -132,6 +183,7 @@ html_content += """
         }
         function closeImg() {
             overlay.style.display = 'none';
+            img.src = ''; 
             document.body.style.overflow = 'auto';
         }
         overlay.addEventListener('wheel', function(e) {
@@ -164,4 +216,4 @@ html_content += """
 with open(CONFIG["FILE_OUT"], "w", encoding="utf-8") as f:
     f.write(html_content)
 
-print(f"Done: {nb_objets}/110 identified. Open {CONFIG['FILE_OUT']}")
+print(f"Succes : {nb_objets}/110 identifies. Fichier '{CONFIG['FILE_OUT']}' genere.")
