@@ -24,10 +24,11 @@ except ImportError:
 # CONFIGURATION & TRADUCTION (Mod here)
 # ==========================================================
 CONFIG = {
-    "FILE_OUT": "planche_messier.html",                      # "Messier catalog"
+    "FILE_OUT": "planche_messier.html",
     "EXTENSIONS": (".jpg", ".jpeg", ".png", ".webp"),
     "THUMB_DIR": "thumbnails",
-    "THUMB_SIZE": (300, 300)
+    "THUMB_SIZE": (300, 300),
+    "BASE_URL": "https://telescopius.com/deep-sky-objects/m-"
 }
 
 LANG = {
@@ -67,10 +68,6 @@ MESSIER_DATA = {
 #                      SCRIPT
 # ==========================================================
 
-# ==========================================================
-# LOGIQUE DE GÉNÉRATION
-# ==========================================================
-
 if not os.path.exists(CONFIG["THUMB_DIR"]):
     os.makedirs(CONFIG["THUMB_DIR"])
 
@@ -81,24 +78,20 @@ for filename in files:
     matches = re.findall(r'M\s?(\d+)', filename, re.IGNORECASE)
     if matches:
         base_name = os.path.splitext(filename)[0]
-        thumb_name = f"{base_name}_thumbnail.jpg"
-        thumb_path = os.path.join(CONFIG["THUMB_DIR"], thumb_name)
+        thumb_path = os.path.join(CONFIG["THUMB_DIR"], f"{base_name}_thumbnail.jpg")
 
         if not os.path.exists(thumb_path):
             try:
                 with Image.open(filename) as img:
                     img.thumbnail(CONFIG["THUMB_SIZE"])
-                    if img.mode in ("RGBA", "P"):
-                        img = img.convert("RGB")
+                    if img.mode in ("RGBA", "P"): img = img.convert("RGB")
                     img.save(thumb_path, "JPEG", quality=85)
-            except Exception as e:
-                print(f"Erreur sur {filename}: {e}")
+            except:
                 thumb_path = filename
 
         for m in matches:
             num = int(m)
-            if 1 <= num <= 110:
-                photo_dict[num] = {"full": filename, "thumb": thumb_path}
+            if 1 <= num <= 110: photo_dict[num] = {"full": filename, "thumb": thumb_path}
 
 nb_objets = len(photo_dict)
 
@@ -114,24 +107,33 @@ html_content = f"""
         h1 {{ color: #fff; font-size: 2em; margin: 0; text-transform: uppercase; }}
         .stats {{ color: #888; font-size: 1.2em; margin-top: 5px; }}
         .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-width: 1500px; margin: 0 auto; }}
-        .case {{ background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; height: 170px; cursor: pointer; }}
-        .img-container {{ width: 100%; height: 130px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }}
+        .case {{ background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; height: 170px; }}
+        .img-container {{ width: 100%; height: 130px; background: #000; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }}
         .case img {{ width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s; }}
         .case:hover img {{ opacity: 0.7; }}
-        .label {{ padding: 6px; font-size: 13px; font-weight: bold; text-align: center; background: #252525; }}
+        
+        /* Style des liens Mxy */
+        .label {{ background: #252525; text-align: center; }}
+        .label a {{ 
+            display: block; padding: 6px; font-size: 13px; font-weight: bold; 
+            color: #aaa; text-decoration: none; transition: color 0.2s, background 0.2s;
+        }}
+        .label a:hover {{ color: #fff; background: #333; }}
+        
         .empty {{ color: #222; font-size: 32px; font-weight: 900; line-height: 1; }}
         .type-hint {{ color: #333; font-size: 10px; text-transform: uppercase; margin-top: 5px; font-weight: bold; text-align: center; padding: 0 5px; }}
-        .empty-label {{ color: #555; }}
-        #overlay {{ display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); overflow: auto; touch-action: none; cursor: default; }}
+        .empty-label a {{ color: #444; }}
+
+        #overlay {{ display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); overflow: auto; touch-action: none; }}
         #imgWrapper {{ display: flex; justify-content: center; align-items: center; min-width: 100%; min-height: 100%; padding: 40px; box-sizing: border-box; }}
         #fullImg {{ transition: transform 0.1s ease-out; cursor: grab; box-shadow: 0 0 30px rgba(0,0,0,0.8); user-select: none; transform-origin: center; max-width: 90vw; }}
         #fullImg:active {{ cursor: grabbing; }}
         .close-btn {{ position: fixed; top: 15px; right: 25px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; opacity: 0.7; }}
+        
         @media print {{
             body {{ background: white !important; color: black !important; }}
-            header h1 {{ color: black !important; }}
-            .case {{ border: 1px solid #ccc !important; background: white !important; }}
-            .label {{ background: #eee !important; color: black !important; }}
+            .case {{ border: 1px solid #ccc !important; }}
+            .label a {{ color: black !important; background: #eee !important; }}
             #overlay, .close-btn {{ display: none !important; }}
         }}
     </style>
@@ -145,19 +147,21 @@ html_content = f"""
 """
 
 for i in range(1, 111):
-    html_content += '<div class="case">'
     obj_type = MESSIER_DATA.get(i, LANG["UNKNOWN_TYPE"])
+    url = f"{CONFIG['BASE_URL']}{i}"
+    
+    html_content += '<div class="case">'
     if i in photo_dict:
         paths = photo_dict[i]
         html_content += f'<div class="img-container" onclick="showImg(\'{paths["full"]}\')">'
         html_content += f'<img src="{paths["thumb"]}" alt="M{i}"></div>'
-        html_content += f'<div class="label">M{i}</div>'
+        html_content += f'<div class="label"><a href="{url}" target="_blank">M{i}</a></div>'
     else:
-        html_content += f'<div class="img-container">'
+        html_content += f'<div class="img-container" onclick="window.open(\'{url}\', \'_blank\')">'
         html_content += f'<span class="empty">{i}</span>'
         html_content += f'<span class="type-hint">{obj_type}</span>'
         html_content += f'</div>'
-        html_content += f'<div class="label empty-label">M{i}</div>'
+        html_content += f'<div class="label empty-label"><a href="{url}" target="_blank">M{i}</a></div>'
     html_content += '</div>'
 
 html_content += """
@@ -216,4 +220,4 @@ html_content += """
 with open(CONFIG["FILE_OUT"], "w", encoding="utf-8") as f:
     f.write(html_content)
 
-print(f"Succes : {nb_objets}/110 identifies. Fichier '{CONFIG['FILE_OUT']}' genere.")
+print(f"Succes : {nb_objets}/110 identifies. Liens Telescopius actifs.")
