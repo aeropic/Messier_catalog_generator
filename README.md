@@ -8,7 +8,7 @@ I searched the web for a simple tool to create a clickable contact sheet, and si
 Simply organize your image files in a folder and add the string "M1, M2 ... Mxyz" to the image names.
 
 Place the "Messier_generator.py" script and the "Messier.bat" file in the same folder. Double-click on Messier.bat, accept the Windows prompts, and it generates an interactive HTML contact sheet.
-- thumbails are created and stored into a "thumbnails" folder
+- thumbnails are created and stored into a "thumbnails" folder
 - The thumbnails are clickable to access the zoomable image.
 - reference of each Messier object (eg M42) is clickable and points to telescopius
 <img width="1464" height="848" alt="cata" src="https://github.com/user-attachments/assets/7fdbe97e-83df-4847-b77f-7b5ed5fd8eef" />
