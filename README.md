@@ -11,6 +11,7 @@ Place the "Messier_generator.py" script and the "Messier.bat" file in the same f
 - thumbails are created and stored into a "thumbnails" folder
 - The thumbnails are clickable to access the zoomable image.
 - reference of each Messier object (eg M42) is clickable and points to telescopius
+<img width="1464" height="848" alt="cata" src="https://github.com/user-attachments/assets/7fdbe97e-83df-4847-b77f-7b5ed5fd8eef" />
 
 The marathon score is displayed at the top (for me, it's like a leisurely stroll with 32 in 2 years!).
 
