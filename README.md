@@ -10,6 +10,7 @@ Simply organize your image files in a folder and add the string "M1, M2 ... Mxyz
 Place the "Messier_generator.py" script and the "Messier.bat" file in the same folder. Double-click on Messier.bat, accept the Windows prompts, and it generates an interactive HTML contact sheet.
 - thumbails are created and stored into a "thumbnails" folder
 - The thumbnails are clickable to access the zoomable image.
+- reference of each Messier object (eg M42) is clickable and points to telescopius
 
 The marathon score is displayed at the top (for me, it's like a leisurely stroll with 32 in 2 years!).
 
