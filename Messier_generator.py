@@ -101,26 +101,32 @@ html_content = f"""
         .stats {{ color: #888; font-size: 1.2em; margin-top: 5px; }}
         .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-width: 1500px; margin: 0 auto; }}
         .case {{ background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; height: 170px; }}
-        .img-container {{ width: 100%; height: 130px; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; cursor: pointer; }}
+        
+        .img-container {{ 
+            width: 100%; height: 130px; background: #000; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center; 
+            overflow: hidden; cursor: pointer; 
+        }}
         .case img {{ width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s; }}
         .case:hover img {{ opacity: 0.7; }}
+        
         .label {{ background: #252525; text-align: center; }}
         .label a {{ display: block; padding: 6px; font-size: 13px; font-weight: bold; color: #aaa; text-decoration: none; }}
         .label a:hover {{ color: #fff; background: #333; }}
-        .empty {{ color: #222; font-size: 32px; font-weight: 900; }}
-        .type-hint {{ color: #333; font-size: 10px; text-transform: uppercase; margin-top: 5px; font-weight: bold; }}
+        
+        .empty {{ color: #222; font-size: 32px; font-weight: 900; line-height: 1; }}
+        .type-hint {{ color: #333; font-size: 10px; text-transform: uppercase; margin-top: 5px; font-weight: bold; text-align: center; padding: 0 5px; }}
 
         #overlay {{ 
             display: none; position: fixed; z-index: 9999; top: 0; left: 0; 
             width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); 
-            overflow: auto; /* Scroll natif */
+            overflow: auto; touch-action: none; 
         }}
         
         #imgWrapper {{ 
             display: flex; align-items: center; justify-content: center;
             min-width: 100%; min-height: 100%;
-            padding: 200px; /* Espace pour le scroll */
-            box-sizing: border-box;
+            padding: 200px; box-sizing: border-box;
         }}
 
         #fullImg {{ 
@@ -143,15 +149,17 @@ html_content = f"""
 """
 
 for i in range(1, 111):
+    obj_type = MESSIER_DATA.get(i, LANG["UNKNOWN_TYPE"])
     url = f"{CONFIG['BASE_URL']}{i}"
     html_content += '<div class="case">'
     if i in photo_dict:
         p = photo_dict[i]
         html_content += f'<div class="img-container" onclick="showImg(\'{p["full"]}\')"><img src="{p["thumb"]}"></div>'
-        html_content += f'<div class="label"><a href="{url}" target="_blank">M{i}</a></div>'
     else:
-        html_content += f'<div class="img-container" onclick="window.open(\'{url}\', \'_blank\')"><span class="empty">{i}</span><span class="type-hint">{MESSIER_DATA.get(i, LANG["UNKNOWN_TYPE"])}</span></div>'
-        html_content += f'<div class="label"><a href="{url}" target="_blank">M{i}</a></div>'
+        html_content += f'<div class="img-container" onclick="window.open(\'{url}\', \'_blank\')">'
+        html_content += f'<span class="empty">{i}</span><span class="type-hint">{obj_type}</span></div>'
+    
+    html_content += f'<div class="label"><a href="{url}" target="_blank">M{i}</a></div>'
     html_content += '</div>'
 
 html_content += """
@@ -179,7 +187,6 @@ html_content += """
 
         function updateTransform() {
             img.style.transform = `scale(${scale})`;
-            // ASTUCE : On agrandit artificiellement le wrapper pour autoriser le scroll
             const extra = (scale > 1) ? scale : 1;
             wrapper.style.width = (100 * extra) + "vw";
             wrapper.style.height = (100 * extra) + "vh";
@@ -204,7 +211,6 @@ html_content += """
 
             updateTransform();
 
-            // Compensation du scroll pour garder le point sous la souris
             const ratio = scale / oldScale;
             overlay.scrollLeft = (overlay.scrollLeft + mX) * ratio - mX;
             overlay.scrollTop = (overlay.scrollTop + mY) * ratio - mY;
