@@ -1,3 +1,10 @@
+#======================================================
+#                 (c) AEROPIC 2026
+#  
+# https://github.com/aeropic/Messier_catalog_generator
+#
+#======================================================
+
 import os
 import re
 import sys
