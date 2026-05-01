@@ -2,17 +2,20 @@ import os
 import re
 import sys
 import subprocess
+from datetime import datetime
 
 # ==========================================================
 # AUTO-INSTALLATION DES DÉPENDANCES
 # ==========================================================
 try:
     from PIL import Image
+    from PIL.ExifTags import TAGS
 except ImportError:
     print("Bibliotheque Pillow manquante. Installation en cours...")
     try:
         subprocess.check_call([sys.executable, "-m", "pip", "install", "Pillow"])
         from PIL import Image
+        from PIL.ExifTags import TAGS
         print("Installation reussie.\n")
     except Exception as e:
         print(f"Erreur lors de l'installation automatique : {e}")
@@ -36,6 +39,9 @@ LANG = {
     "HEADER_TITLE": "mon catalogue Messier",                 # "my Messier catalog"
     "UNIT_LABEL": "objets",                                  # "objects"
     "UNKNOWN_TYPE": "Inconnu",                               # "unknown"
+    "NO_DATE": "Date inconnue",                              # "unknown date"
+    "EXIF_FILE": "Fichier",                                  # "File"
+    "EXIF_DATE": "Date",                                     # "Date"
     "TYPES": {
         "N": "Nébuleuse",                                    # "nebula"
         "NP": "Nébuleuse Planétaire",                        # "planetary nebula"
@@ -68,6 +74,20 @@ MESSIER_DATA = {
 #                      SCRIPT
 # ==========================================================
 
+def get_exif_date(filepath):
+    try:
+        with Image.open(filepath) as img:
+            exif_data = img._getexif()
+            if exif_data:
+                # Tag 306 = DateTime
+                date_str = exif_data.get(306)
+                if date_str:
+                    dt = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
+                    return dt.strftime("%d/%m/%Y %H:%M")
+    except:
+        pass
+    return LANG["NO_DATE"]
+
 if not os.path.exists(CONFIG["THUMB_DIR"]):
     os.makedirs(CONFIG["THUMB_DIR"])
 
@@ -77,6 +97,10 @@ for filename in [f for f in os.listdir(".") if f.lower().endswith(CONFIG["EXTENS
     if matches:
         base_name = os.path.splitext(filename)[0]
         thumb_path = os.path.join(CONFIG["THUMB_DIR"], f"{base_name}_thumbnail.jpg")
+        
+        # Capture des informations temporelles
+        date_photo = get_exif_date(filename)
+        
         if not os.path.exists(thumb_path):
             try:
                 with Image.open(filename) as img:
@@ -86,7 +110,12 @@ for filename in [f for f in os.listdir(".") if f.lower().endswith(CONFIG["EXTENS
             except: thumb_path = filename
         for m in matches:
             num = int(m)
-            if 1 <= num <= 110: photo_dict[num] = {"full": filename, "thumb": thumb_path}
+            if 1 <= num <= 110: 
+                photo_dict[num] = {
+                    "full": filename, 
+                    "thumb": thumb_path,
+                    "date": date_photo
+                }
 
 html_content = f"""
 <!DOCTYPE html>
@@ -99,8 +128,8 @@ html_content = f"""
         header {{ text-align: center; margin-bottom: 30px; }}
         h1 {{ color: #fff; font-size: 2em; margin: 0; text-transform: uppercase; }}
         .stats {{ color: #888; font-size: 1.2em; margin-top: 5px; }}
-        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; max-width: 1500px; margin: 0 auto; }}
-        .case {{ background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; height: 170px; }}
+        .grid {{ display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 12px; max-width: 1500px; margin: 0 auto; }}
+        .case {{ background: #1a1a1a; border: 1px solid #333; border-radius: 4px; overflow: hidden; display: flex; flex-direction: column; height: 150px; }}
         
         .img-container {{ 
             width: 100%; height: 130px; background: #000; 
@@ -154,7 +183,9 @@ for i in range(1, 111):
     html_content += '<div class="case">'
     if i in photo_dict:
         p = photo_dict[i]
-        html_content += f'<div class="img-container" onclick="showImg(\'{p["full"]}\')"><img src="{p["thumb"]}"></div>'
+        # Utilisation des clés LANG et de l'entité HTML &#10; pour le saut de ligne
+        info_hover = f"{LANG['EXIF_FILE']} : {p['full']}&#10;{LANG['EXIF_DATE']} : {p['date']}"
+        html_content += f'<div class="img-container" onclick="showImg(\'{p["full"]}\')"><img src="{p["thumb"]}" title="{info_hover}"></div>'
     else:
         html_content += f'<div class="img-container" onclick="window.open(\'{url}\', \'_blank\')">'
         html_content += f'<span class="empty">{i}</span><span class="type-hint">{obj_type}</span></div>'
