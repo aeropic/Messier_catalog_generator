@@ -1,9 +1,9 @@
-#======================================================
-#                 (c) AEROPIC 2026
+#============================================================
+#                   (c) AEROPIC 2026
 #  
-# https://github.com/aeropic/Messier_catalog_generator
+#     https://github.com/aeropic/Messier_catalog_generator
 #
-#======================================================
+#===========================================================
 
 import os
 import re
@@ -12,7 +12,7 @@ import subprocess
 from datetime import datetime
 
 # ==========================================================
-# AUTO-INSTALLATION DES DÉPENDANCES
+#                AUTO-INSTALL DEPENDANCIES
 # ==========================================================
 try:
     from PIL import Image
