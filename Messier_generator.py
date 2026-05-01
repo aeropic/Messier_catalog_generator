@@ -75,18 +75,25 @@ MESSIER_DATA = {
 # ==========================================================
 
 def get_exif_date(filepath):
+    """Récupère la date EXIF, sinon la date de modification du fichier"""
     try:
         with Image.open(filepath) as img:
             exif_data = img._getexif()
             if exif_data:
-                # Tag 306 = DateTime
+                # Tag 306 = DateTime original
                 date_str = exif_data.get(306)
                 if date_str:
                     dt = datetime.strptime(date_str, "%Y:%m:%d %H:%M:%S")
                     return dt.strftime("%d/%m/%Y %H:%M")
     except:
         pass
-    return LANG["NO_DATE"]
+
+    # Backup : Date de modification du fichier[cite: 2]
+    try:
+        mtime = os.path.getmtime(filepath)
+        return datetime.fromtimestamp(mtime).strftime("%d/%m/%Y %H:%M")
+    except:
+        return LANG["NO_DATE"]
 
 if not os.path.exists(CONFIG["THUMB_DIR"]):
     os.makedirs(CONFIG["THUMB_DIR"])
