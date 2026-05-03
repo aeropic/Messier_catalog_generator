@@ -3,8 +3,9 @@
 #  
 #       https://github.com/aeropic/Messier_catalog_generator
 #
-#   V2 : added a complete database with description, constellation
+#   V2.1 : added a complete database with description, constellation
 #        magnitude, size, season
+#        + Restore Zoom/Unzoom function from V1
 #
 #=================================================================
 
@@ -28,7 +29,7 @@ CONFIG = {
     "FILE_OUT": "planche_messier.html",
     "EXTENSIONS": (".jpg", ".jpeg", ".png", ".webp"),
     "THUMB_DIR": "thumbnails",
-    "THUMB_SIZE": (300, 300),
+    "THUMB_SIZE": (200, 200),
     "BASE_URL": "https://telescopius.com/deep-sky-objects/m-"
 }
 
@@ -218,8 +219,26 @@ html = f"""<!DOCTYPE html>
         #tooltip {{ position: fixed; display: none; background: rgba(15,15,15,0.95); border: 1px solid #4dabf7; padding: 12px; border-radius: 6px; z-index: 2000; pointer-events: none; font-size: 13px; box-shadow: 0 4px 15px rgba(0,0,0,0.5); width: 220px; }}
         .tt-label {{ color: #4dabf7; font-weight: bold; }}
         .tt-common {{ font-style: italic; color: #ddd; margin-top: 8px; display: block; border-top: 1px solid #333; padding-top: 5px; }}
-        #overlay {{ display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.95); align-items:center; justify-content:center; }}
-        #fullImg {{ max-width: 90vw; max-height: 90vh; cursor: pointer; }}
+
+        /* --- ZOOM OVERLAY (From V1) --- */
+        #overlay {{ 
+            display: none; position: fixed; z-index: 9999; top: 0; left: 0; 
+            width: 100vw; height: 100vh; background: rgba(0,0,0,0.98); 
+            overflow: auto; touch-action: none; 
+        }}
+        #imgWrapper {{ 
+            display: flex; align-items: center; justify-content: center;
+            min-width: 100%; min-height: 100%;
+            padding: 200px; box-sizing: border-box;
+        }}
+        #fullImg {{ 
+            transition: transform 0.1s ease-out; 
+            cursor: grab; transform-origin: center;
+            max-width: 90vw; height: auto;
+            box-shadow: 0 0 30px rgba(0,0,0,0.8);
+        }}
+        #fullImg:active {{ cursor: grabbing; }}
+        .close-btn {{ position: fixed; top: 15px; right: 25px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; z-index: 10000; }}
     </style>
 </head>
 <body>
@@ -249,7 +268,15 @@ for i in range(1, 111):
 html += """
     </div>
     <div id="tooltip"></div>
-    <div id="overlay" onclick="this.style.display='none'"><img id="fullImg" src=""></div>
+    
+    <!-- --- ZOOM OVERLAY (From V1) --- -->
+    <div id="overlay">
+        <span class="close-btn" onclick="closeImg()">&times;</span>
+        <div id="imgWrapper" onclick="closeImg()">
+            <img id="fullImg" src="" draggable="false" onclick="event.stopPropagation()">
+        </div>
+    </div>
+
     <script>
         function filterS(s, b) {
             document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
@@ -258,6 +285,7 @@ html += """
                 c.style.display = (s === 'all' || c.dataset.season === s) ? 'flex' : 'none';
             });
         }
+        
         const tt = document.getElementById('tooltip');
         function showT(e, el) {
             const imgData = el.querySelector('.img-container').dataset;
@@ -273,7 +301,6 @@ html += """
             let x = e.clientX + 15;
             let y = e.clientY + 15;
             
-            // Gestion collision bords écran
             if (x + 230 > window.innerWidth) x = e.clientX - 240;
             if (y + tt.offsetHeight > window.innerHeight) y = e.clientY - tt.offsetHeight - 15;
             
@@ -281,7 +308,68 @@ html += """
             tt.style.top = y + 'px';
         }
         function hideT() { tt.style.display = 'none'; }
-        function showImg(src) { document.getElementById('fullImg').src = src; document.getElementById('overlay').style.display = 'flex'; }
+
+        /* --- ZOOM/PAN LOGIC (From V1) --- */
+        let scale = 1; let isDragging = false;
+        let startX, startY, scrollLeft, scrollTop;
+        const overlay = document.getElementById('overlay');
+        const img = document.getElementById('fullImg');
+        const wrapper = document.getElementById('imgWrapper');
+
+        function showImg(src) {
+            img.src = src; scale = 1;
+            updateTransform();
+            overlay.style.display = 'block';
+            document.body.style.overflow = 'hidden';
+            overlay.scrollTo(0, 0);
+            hideT(); // Ensure tooltip is hidden
+        }
+
+        function updateTransform() {
+            img.style.transform = `scale(${scale})`;
+            const extra = (scale > 1) ? scale : 1;
+            wrapper.style.width = (100 * extra) + "vw";
+            wrapper.style.height = (100 * extra) + "vh";
+        }
+
+        function closeImg() {
+            overlay.style.display = 'none';
+            img.src = ''; 
+            document.body.style.overflow = 'auto';
+            wrapper.style.width = wrapper.style.height = "100%";
+        }
+
+        overlay.addEventListener('wheel', function(e) {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? 0.85 : 1.15;
+            const oldScale = scale;
+            scale = Math.min(Math.max(0.1, scale * delta), 15);
+            
+            const rect = img.getBoundingClientRect();
+            const mX = e.clientX - rect.left;
+            const mY = e.clientY - rect.top;
+
+            updateTransform();
+
+            const ratio = scale / oldScale;
+            overlay.scrollLeft = (overlay.scrollLeft + mX) * ratio - mX;
+            overlay.scrollTop = (overlay.scrollTop + mY) * ratio - mY;
+        }, { passive: false });
+
+        img.addEventListener('mousedown', (e) => {
+            isDragging = true;
+            startX = e.clientX; startY = e.clientY;
+            scrollLeft = overlay.scrollLeft; scrollTop = overlay.scrollTop;
+        });
+
+        window.addEventListener('mouseup', () => isDragging = false);
+        overlay.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            overlay.scrollLeft = scrollLeft - (e.clientX - startX);
+            overlay.scrollTop = scrollTop - (e.clientY - startY);
+        });
+
+        document.addEventListener('keydown', (e) => { if (e.key === "Escape") closeImg(); });
     </script>
 </body></html>"""
 
