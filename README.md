@@ -11,9 +11,12 @@ Place the "Messier_generator.py" script and the "Messier.bat" file in the same f
 - thumbnails are created and stored into a "thumbnails" folder
 - The thumbnails are clickable to access the zoomable image.
 - reference of each Messier object (eg M42) is clickable and points to telescopius
-- The marathon score is displayed at the top (for me, it's like a leisurely stroll with 32 in 2 years!).
+- The marathon score is displayed at the top (for me, it's like a leisurely stroll with 42 in 2 years!).
+- a floating window will pop when the mouse flies over the thumbnail area
+- the catalog can be sorted by "best season to observe"
   
-<img width="1464" height="848" alt="cata" src="https://github.com/user-attachments/assets/7fdbe97e-83df-4847-b77f-7b5ed5fd8eef" />
+<img width="1317" height="710" alt="cata" src="https://github.com/user-attachments/assets/2a355eea-cb25-419e-831f-2b209d44fd76" />
+
 
 If there are multiple objects in the same image, name the file with both objects (e.g., M65_M66_triplet_lion.jpg).
 The script includes a mini-catalog, and the object type is indicated below the object number. I was surprised to see that mischievous Messier slipped a double star into M40 and something odd into M24!
